@@ -1,18 +1,36 @@
 const { exec } = require("child_process");
 
-let branchs = [];
-const repos = ["server-exmed", "web-exmed"];
+// Branches that will be deleted
+let branches = [];
 
-repos.forEach((repo) =>
-  exec(`cd ${repo} && git branch`, (error, stdout, stderr) => {
+// Repositories that will navigate
+const repositories = ["back"];
+
+// Repositories that will not be deleted
+const notDeleteBranches = ["dev", "staging", "master"];
+
+repositories.forEach((repository) =>
+  exec(`cd ${repository} && git branch`, (error, stdout) => {
     if (error) {
-      console.log(`error: ${error.message}`);
-      return;
+      console.error(`Error adding branch: ${error.message}`);
+    } else {
+      branches = [...stdout.replace(/[ *]/g, "").trim().split("\n")];
+
+      if (notDeleteBranches.length > 0) {
+        branches = branches.filter(
+          (branch) => !notDeleteBranches.includes(branch)
+        );
+      }
+
+      branches.forEach((branch) => {
+        exec(`cd ${repository} && git branch -D ${branch}`, (error, stdout) => {
+          if (error) {
+            console.log(`Error deleting branch: ${error.message}`);
+          } else {
+            console.log(`branch deleted: ${stdout}`);
+          }
+        });
+      });
     }
-    if (stderr) {
-      console.log(`stderr: ${stderr}`);
-      return;
-    }
-    console.log(`stdout: ${stdout}`);
   })
 );
